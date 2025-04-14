@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: codeguard_db
+    environment:
+      POSTGRES_DB: codeguard
+      POSTGRES_USER: codeguard
+      POSTGRES_PASSWORD: codeguard
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - my-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U codeguard -d codeguard" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  smppsim:
+    build:
+      context: ./SMPPSim-bug-fix-v3.0.0
+      dockerfile: Dockerfile
+    container_name: smppsim
+    ports:
+      - "2775:2775"
+    networks:
+      - my-network
+    healthcheck:
+      test: ["CMD-SHELL", "netstat -tuln | grep 2775"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  codeguard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: codeguard_app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      smppsim:
+        condition: service_healthy
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/codeguard
+      - SPRING_DATASOURCE_USERNAME=codeguard
+      - SPRING_DATASOURCE_PASSWORD=codeguard
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - SPRING_JWT_SECRET=REPLACE_WITH_SuperSecretKey #Ключ для JWT токенов
+      - SPRING_JWT_EXPIRATION_MS=REPLACE_WITH_JWT_EXPIRATION #Пример:86400000мс (24 часа)
+      - SPRING_MAIL_HOST=REPLACE_WITH_SMTP_HOST   # Пример: smtp.gmail.com
+      - SPRING_MAIL_USERNAME=REPLACE_WITH_EMAIL # Пример: your.email@gmail.com
+      - SPRING_MAIL_PASSWORD=REPLACE_WITH_EMAIL_PASSWORD# Пароль приложения для Gmail
+      - SPRING_TGBOT_TOKEN=REPLACE_WITH_TELEGRAM_TOKEN   # Токен от @BotFather
+    ports:
+      - "8080:8080"
+    networks:
+      - my-network
+    volumes:
+      - ./logs:/app/logs
+
+networks:
+  my-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
