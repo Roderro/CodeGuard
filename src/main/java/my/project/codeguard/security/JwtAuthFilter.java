@@ -7,15 +7,12 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import my.project.codeguard.entity.User;
-import my.project.codeguard.repository.UserRepository;
-import my.project.codeguard.service.user.UserDetailsServiceImpl;
-import my.project.codeguard.service.user.UserService;
 import my.project.codeguard.util.JwtUtils;
 import my.project.codeguard.util.enums.Role;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -24,12 +21,12 @@ import java.io.IOException;
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
     private final JwtUtils jwtUtils;
-    private final UserRepository userRepository;
+    private final UserDetailsService userDetailsService;
 
     @Autowired
-    public JwtAuthFilter(JwtUtils jwtUtils, UserRepository userRepository) {
+    public JwtAuthFilter(JwtUtils jwtUtils, UserDetailsService userDetailsService) {
         this.jwtUtils = jwtUtils;
-        this.userRepository = userRepository;
+        this.userDetailsService = userDetailsService;
     }
 
     @Override
@@ -44,7 +41,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 String username = jwtUtils.retrieveClaimUsername(decodedJWT);
                 Role authority = jwtUtils.retrieveClaimAuthority(decodedJWT);
                 Long userId = jwtUtils.retrieveClaimUserId(decodedJWT);
-                userRepository.findById(userId).orElseThrow(() -> new BadCredentialsException("User not found"));
+                userDetailsService.loadUserByUsername(username);
                 UserDetailsImpl userDetailsImpl = new UserDetailsImpl(new User(userId, username, authority));
                 UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
                         userDetailsImpl, userDetailsImpl.getPassword(), userDetailsImpl.getAuthorities()

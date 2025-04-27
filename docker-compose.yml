@@ -55,7 +55,7 @@ services:
       - SPRING_JWT_EXPIRATION_MS=REPLACE_WITH_JWT_EXPIRATION #Пример:86400000мс (24 часа)
       - SPRING_MAIL_HOST=REPLACE_WITH_SMTP_HOST   # Пример: smtp.gmail.com
       - SPRING_MAIL_USERNAME=REPLACE_WITH_EMAIL # Пример: your.email@gmail.com
-      - SPRING_MAIL_PASSWORD=REPLACE_WITH_EMAIL_PASSWORD# Пароль приложения для Gmail
+      - SPRING_MAIL_PASSWORD=REPLACE_WITH_EMAIL_PASSWORD  #Пароль приложения для Gmail
       - SPRING_TGBOT_TOKEN=REPLACE_WITH_TELEGRAM_TOKEN   # Токен от @BotFather
     ports:
       - "8080:8080"
